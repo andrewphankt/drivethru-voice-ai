@@ -1,0 +1,3 @@
+# Local fine-tuning on Apple Silicon (M-series Mac). Install with:
+#   python3 -m pip install -r train/requirements_mlx.txt
+mlx-lm>=0.21

@@ -1,0 +1,15 @@
+# Keep the build context tiny & fast — never ship the 24GB git history or weights.
+.git
+__pycache__/
+*.pyc
+*.sqlite
+*.db
+.env
+.DS_Store
+train/drivethru-fused/
+train/adapters/
+train/mlx_data/
+*.safetensors
+*.gguf
+data/_topup_*.jsonl
+data/live_log*.jsonl

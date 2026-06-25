@@ -1,0 +1,44 @@
+# GBNF grammar for the <order> payload (CLAUDE.md §7).
+# Guarantees: well-formed JSON, exact op schema, closed-set sizes/state.
+# NOT enforced here (by design, §7): whether item/mod strings exist on the
+# menu — that is menu_validator.py's job. Grammar = shape, validator = semantics.
+#
+# Discriminator key is "op". Conventions:
+#   add    -> all of item/size/qty/mods present (size null if item is sizeless)
+#   modify -> line + size/qty/mods, where null means "leave this field unchanged"
+#   remove -> line only
+#   clear  -> wipes the order
+
+root     ::= ws "{" ws "\"ops\"" ws ":" ws ops ws "," ws "\"state\"" ws ":" ws state ws "}" ws
+
+ops      ::= "[" ws "]" | "[" ws op (ws "," ws op)* ws "]"
+
+op       ::= add | modify | remove | clear
+
+add      ::= "{" ws "\"op\""   ws ":" ws "\"add\""    ws ","
+                 ws "\"item\"" ws ":" ws string        ws ","
+                 ws "\"size\"" ws ":" ws sizeval       ws ","
+                 ws "\"qty\""  ws ":" ws qty           ws ","
+                 ws "\"mods\"" ws ":" ws mods          ws "}"
+
+modify   ::= "{" ws "\"op\""   ws ":" ws "\"modify\"" ws ","
+                 ws "\"line\"" ws ":" ws int           ws ","
+                 ws "\"size\"" ws ":" ws sizeval       ws ","
+                 ws "\"qty\""  ws ":" ws qtynull       ws ","
+                 ws "\"mods\"" ws ":" ws modsnull      ws "}"
+
+remove   ::= "{" ws "\"op\""   ws ":" ws "\"remove\"" ws ","
+                 ws "\"line\"" ws ":" ws int           ws "}"
+
+clear    ::= "{" ws "\"op\""   ws ":" ws "\"clear\""  ws "}"
+
+state    ::= "\"in_progress\"" | "\"confirmed\"" | "\"cancelled\"" | "\"escalated\""
+
+sizeval  ::= "\"S\"" | "\"M\"" | "\"L\"" | "null"
+qty      ::= [1-9] [0-9]?
+qtynull  ::= qty | "null"
+int      ::= [0-9]+
+mods     ::= "[" ws "]" | "[" ws string (ws "," ws string)* ws "]"
+modsnull ::= mods | "null"
+string   ::= "\"" ([^"\\] | "\\" .)* "\""
+ws       ::= [ \t\n]*

@@ -1,0 +1,7 @@
+# B4 voice pipeline (Pipecat) — install on your Mac with:
+#   python3 -m pip install -r app/requirements_voice.txt
+#
+# Extras: webrtc (browser mic transport), silero (voice-activity detection),
+# whisper (local speech-to-text), kokoro (local text-to-speech).
+# All run locally on your Mac — no cloud STT/TTS keys needed.
+pipecat-ai[webrtc,silero,whisper,kokoro]

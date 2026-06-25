@@ -1,0 +1,30 @@
+{
+  "combos": {
+    "combo_classic":  {"name":"Classic Burger Combo","sizes":["M","L"],"includes":["burger_classic","fries","drink"],"prices":{"M":7.99,"L":8.99}},
+    "combo_double":   {"name":"Double Stack Combo","sizes":["M","L"],"includes":["burger_double","fries","drink"],"prices":{"M":9.49,"L":10.49}},
+    "combo_chicken":  {"name":"Crispy Chicken Combo","sizes":["M","L"],"includes":["sandwich_chicken","fries","drink"],"prices":{"M":8.49,"L":9.49}},
+    "combo_nuggets":  {"name":"Nugget Combo","sizes":["M","L"],"includes":["nuggets_8","fries","drink"],"prices":{"M":7.49,"L":8.49}}
+  },
+  "mains": {
+    "burger_classic":  {"name":"Classic Burger","mods":["no_onion","no_pickle","extra_cheese","no_cheese","add_bacon"],"price":4.99},
+    "burger_double":   {"name":"Double Stack Burger","mods":["no_onion","no_pickle","extra_cheese","add_bacon"],"price":6.99},
+    "sandwich_chicken":{"name":"Crispy Chicken Sandwich","mods":["no_mayo","spicy","add_lettuce"],"price":5.49},
+    "nuggets_6":       {"name":"6pc Nuggets","mods":[],"price":3.99},
+    "nuggets_8":       {"name":"8pc Nuggets","mods":[],"price":4.99},
+    "veggie_wrap":     {"name":"Veggie Wrap","mods":["no_sauce","add_cheese"],"price":4.49}
+  },
+  "sides": {
+    "fries":      {"name":"Fries","sizes":["S","M","L"],"prices":{"S":2.29,"M":2.79,"L":3.29}},
+    "onion_rings":{"name":"Onion Rings","sizes":["S","M","L"],"prices":{"S":2.99,"M":3.49,"L":3.99}},
+    "side_salad": {"name":"Side Salad","sizes":[],"price":3.49}
+  },
+  "drinks": {
+    "drink_cola":  {"name":"Cola","sizes":["S","M","L"],"prices":{"S":1.79,"M":1.99,"L":2.29}},
+    "drink_sprite":{"name":"Lemon-Lime Soda","sizes":["S","M","L"],"prices":{"S":1.79,"M":1.99,"L":2.29}},
+    "drink_water": {"name":"Water","sizes":["S","M","L"],"prices":{"S":0.00,"M":0.00,"L":0.00}},
+    "drink_shake": {"name":"Milkshake","sizes":["S","M","L"],"mods":["vanilla","chocolate","strawberry"],"prices":{"S":3.49,"M":3.99,"L":4.49}}
+  },
+  "sauces": ["ketchup","bbq","ranch","honey_mustard","sweet_chili"],
+  "mod_prices": {"add_bacon":1.00,"extra_cheese":0.50,"add_cheese":0.50},
+  "currency": "USD"
+}

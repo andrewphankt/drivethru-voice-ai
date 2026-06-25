@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drive-Thru Voice AI — Demo</title>
+<style>
+  :root{
+    --bg:#f3f4f6; --ink:#1a1d29; --muted:#6b7280; --line:#e5e7eb;
+    --card:#ffffff; --amber:#f5a623; --amber-d:#d2860a;
+    --green:#16a34a; --red:#dc2626; --shadow:0 1px 3px rgba(0,0,0,.08),0 8px 24px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);height:100vh;display:flex;flex-direction:column}
+  header{background:var(--ink);color:#fff;display:flex;align-items:center;gap:14px;padding:14px 22px}
+  header .logo{font-weight:700;font-size:18px;letter-spacing:.2px}
+  header .logo b{color:var(--amber)}
+  header .dot{width:9px;height:9px;border-radius:50%;background:#475569;transition:background .3s}
+  header .dot.on{background:var(--green);box-shadow:0 0 0 4px rgba(22,163,74,.2)}
+  header .spacer{flex:1}
+  header button{background:#2b2f3e;color:#cbd2e0;border:0;border-radius:8px;padding:8px 14px;
+       font-size:13px;cursor:pointer;font-weight:600}
+  header button:hover{background:#363b4d;color:#fff}
+
+  main{flex:1;display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:18px;padding:18px;overflow:hidden}
+  .panel{background:var(--card);border-radius:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+  .panel h2{margin:0;padding:14px 18px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;
+       color:var(--muted);border-bottom:1px solid var(--line)}
+  .panel .body{padding:14px 18px;overflow:auto;flex:1}
+
+  /* menu */
+  .cat{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--amber-d);font-weight:700;margin:14px 0 6px}
+  .cat:first-child{margin-top:0}
+  .mitem{display:flex;justify-content:space-between;padding:5px 0;font-size:14px;border-bottom:1px dashed #f0f0f0}
+  .mitem .price{color:var(--muted);font-variant-numeric:tabular-nums}
+  .sauces{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chip{background:#f3f4f6;border-radius:999px;padding:3px 10px;font-size:12px;color:#555}
+
+  /* order ticket */
+  #ticket{font-variant-numeric:tabular-nums}
+  .line{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px dashed #eee}
+  .line .name{font-weight:600}
+  .line .meta{color:var(--muted);font-size:12px;margin-left:2px}
+  .line .lp{color:#333}
+  .empty{color:var(--muted);text-align:center;padding:40px 0;font-style:italic}
+  .total{display:flex;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:2px solid var(--ink);
+       font-size:20px;font-weight:700}
+  .badge{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;
+       background:#eef1f5;color:#475569;margin-top:12px}
+  .badge.confirmed{background:#dcfce7;color:#15803d}
+  .badge.cancelled{background:#fee2e2;color:#b91c1c}
+  .escalate{background:#fff7ed;border:1px solid var(--amber);color:#b45309;border-radius:10px;
+       padding:12px 14px;margin-top:14px;font-weight:600;display:none}
+  .escalate.show{display:block}
+
+  /* AI panel */
+  .io{margin-bottom:14px}
+  .io .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px}
+  .io .heard{background:#eef2ff;border-radius:10px;padding:10px 12px;font-size:14px;min-height:20px}
+  .io .said{background:#f0fdf4;border-radius:10px;padding:10px 12px;font-size:14px;min-height:20px}
+  pre.ops{background:#0f172a;color:#cbd5e1;border-radius:10px;padding:12px;font-size:12px;
+       overflow:auto;margin:0;white-space:pre-wrap;word-break:break-word}
+
+  /* control bar */
+  footer{padding:14px 18px;display:flex;align-items:center;gap:12px;background:#fff;border-top:1px solid var(--line)}
+  #mic{width:54px;height:54px;border-radius:50%;border:0;background:var(--amber);color:#fff;font-size:15px;font-weight:600;
+       cursor:pointer;flex:none;box-shadow:0 4px 12px rgba(245,166,35,.4);transition:transform .1s}
+  #mic:hover{transform:scale(1.05)} #mic:active{transform:scale(.95)}
+  #mic.live{background:var(--red);animation:pulse 1.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}70%{box-shadow:0 0 0 14px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
+  #text{flex:1;border:1px solid var(--line);border-radius:10px;padding:13px 14px;font-size:15px;outline:none}
+  #text:focus{border-color:var(--amber)}
+  #send{background:var(--ink);color:#fff;border:0;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:600;cursor:pointer}
+  .hint{font-size:12px;color:var(--muted);padding:0 18px 12px}
+
+  /* confirm banner */
+  .banner{display:none;background:#ecfdf5;border:1px solid var(--green);color:#065f46;border-radius:10px;
+       padding:12px 14px;margin-bottom:12px;font-weight:600}
+  .banner.show{display:block}
+  .banner .cd{float:right;background:var(--green);color:#fff;border-radius:999px;padding:1px 10px;font-variant-numeric:tabular-nums}
+  /* kitchen queue (confirmed orders) */
+  .kticket{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .kticket .knum{font-weight:700;font-size:16px;color:var(--amber-d);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+  .kticket .kline{font-size:14px;padding:2px 0}
+  .kticket .ktotal{margin-top:6px;font-weight:700;border-top:1px solid var(--line);padding-top:6px;text-align:right}
+  .kdone{background:var(--ink);color:#fff;border:0;border-radius:6px;padding:3px 11px;font-size:12px;cursor:pointer;font-weight:600}
+  /* kitchen mode: current order + the confirmed-order queue */
+  #kitchenPanel{display:none}
+  body.kitchen main{grid-template-columns:1fr 1.4fr}
+  body.kitchen #menuPanel,body.kitchen #aiPanel{display:none}
+  body.kitchen #kitchenPanel{display:flex}
+  body.kitchen #ticket{font-size:17px}
+</style>
+</head>
+<body>
+<header>
+  <span class="dot" id="dot" title="model status"></span>
+  <span class="spacer"></span>
+  <button id="kitchenBtn">Kitchen mode</button>
+  <button id="resetBtn">New order</button>
+</header>
+
+<main>
+  <section class="panel" id="menuPanel">
+    <h2>Menu</h2>
+    <div class="body" id="menu"></div>
+  </section>
+
+  <section class="panel" id="orderPanel">
+    <h2>Order</h2>
+    <div class="body">
+      <div class="banner" id="banner"><span id="bannerText"></span> <span class="cd" id="countdown"></span></div>
+      <div id="ticket"><div class="empty">No items yet — say or type your order.</div></div>
+      <div class="total" id="totalRow" style="display:none"><span>Total</span><span id="total">$0.00</span></div>
+      <div id="badge"></div>
+      <div class="escalate" id="escalate">A team member has been called over.</div>
+    </div>
+  </section>
+
+  <section class="panel" id="aiPanel">
+    <h2>What the AI is doing</h2>
+    <div class="body">
+      <div class="io"><div class="lbl">Customer said</div><div class="heard" id="heard">—</div></div>
+      <div class="io"><div class="lbl">AI replied</div><div class="said" id="said">—</div></div>
+      <div class="io"><div class="lbl">Order change emitted</div><pre class="ops" id="ops">[]</pre></div>
+    </div>
+  </section>
+
+  <section class="panel" id="kitchenPanel">
+    <h2>Kitchen — confirmed orders</h2>
+    <div class="body" id="kitchenQueue"><div class="empty">No confirmed orders yet.</div></div>
+  </section>
+</main>
+
+<footer>
+  <button id="mic" title="Click to speak">Mic</button>
+  <input id="text" placeholder="Type your order, e.g. “can I get a large cola and a cheeseburger”…" autocomplete="off" autofocus>
+  <button id="send">Send</button>
+</footer>
+<div class="hint" id="hint">Typing works in any browser. Mic needs Chrome on <b>http://localhost:8000</b> (not 0.0.0.0 / an IP). The downloadable version runs speech fully on-device.</div>
+
+<script>
+const SESSION = "s" + Math.random().toString(36).slice(2);
+let MENU = null, SPEC = {}, NAME = {};
+const $ = id => document.getElementById(id);
+
+const pretty = s => String(s).replace(/_/g," ");
+const money  = n => "$" + Number(n||0).toFixed(2);
+
+async function loadMenu(){
+  MENU = await (await fetch("/menu")).json();
+  const cats = [["combos","Combos"],["mains","Mains"],["sides","Sides"],["drinks","Drinks"]];
+  let html = "";
+  for(const [key,label] of cats){
+    const items = MENU[key]||{};
+    if(!Object.keys(items).length) continue;
+    html += `<div class="cat">${label}</div>`;
+    for(const [id,spec] of Object.entries(items)){
+      SPEC[id]=spec; NAME[id]=spec.name;
+      let price = "";
+      if(spec.prices){const v=Object.values(spec.prices);price = `${money(Math.min(...v))}–${money(Math.max(...v))}`;}
+      else if(spec.price!=null) price = money(spec.price);
+      html += `<div class="mitem"><span>${spec.name}</span><span class="price">${price}</span></div>`;
+    }
+  }
+  if((MENU.sauces||[]).length){
+    html += `<div class="cat">Sauces</div><div class="sauces">` +
+            MENU.sauces.map(s=>`<span class="chip">${pretty(s)}</span>`).join("") + `</div>`;
+  }
+  $("menu").innerHTML = html;
+}
+
+function linePrice(l){
+  const s = SPEC[l.item]; if(!s) return 0;
+  let base = s.prices ? (s.prices[l.size]||0) : (s.price||0);
+  for(const m of (l.mods||[])) base += (MENU.mod_prices&&MENU.mod_prices[m])||0;
+  return base * (l.qty||1);
+}
+
+function renderOrder(snap){
+  const lines = snap.lines||[];
+  const t = $("ticket");
+  if(!lines.length){ t.innerHTML = `<div class="empty">No items yet — say or type your order.</div>`; }
+  else{
+    t.innerHTML = lines.map(l=>{
+      const size = l.size ? `<span class="meta"> ${l.size}</span>` : "";
+      const mods = (l.mods||[]).length ? `<span class="meta"> · ${l.mods.map(pretty).join(", ")}</span>` : "";
+      return `<div class="line"><span><span class="name">${l.qty}× ${NAME[l.item]||l.item}</span>${size}${mods}</span>`+
+             `<span class="lp">${money(linePrice(l))}</span></div>`;
+    }).join("");
+  }
+  const total = snap.total!=null ? snap.total : lines.reduce((a,l)=>a+linePrice(l),0);
+  $("totalRow").style.display = lines.length ? "flex" : "none";
+  $("total").textContent = money(total);
+  const st = snap.state||"in_progress";
+  $("badge").innerHTML = st==="in_progress" ? "" : `<span class="badge ${st}">${pretty(st)}</span>`;
+}
+
+function renderAI(ai, say){
+  if(ai){ $("heard").textContent = ai.transcript||"—";
+          $("ops").textContent = JSON.stringify((ai.order&&ai.order.ops)||[], null, 1); }
+  $("said").textContent = say||"—";
+}
+
+function speak(text, append){
+  try{ const u=new SpeechSynthesisUtterance(text); u.rate=1.05; if(!append) speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){}
+}
+
+// ---- drive-thru lifecycle: confirm -> pull forward -> (8s) -> Order #N to kitchen ----
+let orderNum=1, confirmTimer=null, completed=[]; const CONFIRM_SECS=8;
+function showBanner(t){ $("bannerText").textContent=t; $("banner").classList.add("show"); }
+function hideBanner(){ $("banner").classList.remove("show"); $("countdown").textContent=""; }
+function cancelConfirm(){ if(confirmTimer){ clearInterval(confirmTimer); confirmTimer=null; } hideBanner(); }
+function handleLifecycle(snap){
+  if((snap.state||"")==="confirmed" && (snap.lines||[]).length) startConfirm(snap);
+  else cancelConfirm();                          // any change (e.g. removing an item) un-confirms
+}
+function startConfirm(snap){
+  cancelConfirm();
+  showBanner(`Order #${orderNum} confirmed — please pull forward to the next window.`);
+  speak("Please pull forward to the next window.", true);
+  let left=CONFIRM_SECS; $("countdown").textContent=left;
+  confirmTimer=setInterval(()=>{ left--; $("countdown").textContent=left>0?left:""; if(left<=0) finalizeOrder(snap); }, 1000);
+}
+async function finalizeOrder(snap){
+  cancelConfirm();
+  completed.unshift({num:orderNum, lines:snap.lines||[], total:snap.total||0});
+  orderNum++;
+  renderKitchen();
+  document.body.classList.add("kitchen");        // show the kitchen screen
+  try{ await fetch("/reset",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({session:SESSION})}); }catch(e){}
+  renderOrder({lines:[],state:"in_progress",total:0}); renderAI(null,"—"); $("ops").textContent="[]";
+  speak(`Order ${orderNum-1} sent to the kitchen. Next guest — what can I get you?`);
+}
+function renderKitchen(){
+  const q=$("kitchenQueue");
+  if(!completed.length){ q.innerHTML=`<div class="empty">No confirmed orders yet.</div>`; return; }
+  q.innerHTML = completed.map(o=>{
+    const lines=(o.lines||[]).map(l=>{
+      const size=l.size?` ${l.size}`:""; const mods=(l.mods||[]).length?` · ${l.mods.map(pretty).join(", ")}`:"";
+      return `<div class="kline">${l.qty}× ${NAME[l.item]||l.item}${size}${mods}</div>`;
+    }).join("");
+    return `<div class="kticket"><div class="knum"><span>Order #${o.num}</span><button class="kdone" data-n="${o.num}">Done</button></div>${lines}<div class="ktotal">${money(o.total)}</div></div>`;
+  }).join("");
+  q.querySelectorAll(".kdone").forEach(b=> b.onclick=()=>{ completed=completed.filter(o=>String(o.num)!==b.dataset.n); renderKitchen(); });
+}
+
+let busy=false;
+async function send(text){
+  text=(text||"").trim(); if(!text||busy) return;
+  if(document.body.classList.contains("kitchen")) document.body.classList.remove("kitchen");  // next customer -> ordering view
+  busy=true; $("heard").textContent=text; $("send").disabled=true;
+  try{
+    const r = await fetch("/say",{method:"POST",headers:{"Content-Type":"application/json"},
+              body:JSON.stringify({session:SESSION,text})});
+    const d = await r.json();
+    renderOrder(d.order); renderAI(d.ai, d.say); speak(d.say);
+    $("escalate").classList.toggle("show", !!d.escalated);
+    $("dot").classList.add("on");
+    handleLifecycle(d.order);
+  }catch(e){ $("said").textContent="(could not reach the model — is `ollama serve` running?)"; }
+  busy=false; $("send").disabled=false; $("text").value="";
+}
+
+// text input
+$("send").onclick = ()=>send($("text").value);
+$("text").addEventListener("keydown", e=>{ if(e.key==="Enter") send($("text").value); });
+
+// reset / kitchen mode
+$("resetBtn").onclick = async()=>{
+  cancelConfirm();
+  await fetch("/reset",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({session:SESSION})});
+  renderOrder({lines:[],state:"in_progress",total:0}); renderAI(null,"—"); $("escalate").classList.remove("show");
+  $("ops").textContent="[]";
+};
+$("kitchenBtn").onclick = ()=> document.body.classList.toggle("kitchen");
+
+// mic (Web Speech API) — optional; typing is always the reliable path
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function micOff(msg){ $("mic").disabled=true; $("mic").title=msg; $("hint").innerHTML=msg+" — just type your order, it works the same."; }
+
+if(!window.isSecureContext){
+  micOff("Mic needs http://localhost:8000 (you're on an IP/0.0.0.0, which browsers block)");
+} else if(!SR){
+  micOff("Mic needs Chrome or Edge");
+} else {
+  // Always-on: click once to start, then it stays listening and auto-submits each
+  // utterance (a new order or a change) — like a real drive-thru. Click again to stop.
+  const rec = new SR(); rec.lang="en-US"; rec.interimResults=true; rec.continuous=true;
+  let listening=false, finalBuf="";
+  function setBtn(){ $("mic").classList.toggle("live", listening); $("mic").textContent = listening ? "Stop" : "Mic"; $("mic").title = listening ? "Click to stop listening" : "Click to start listening"; }
+  $("mic").onclick = ()=>{
+    if(listening){ listening=false; try{rec.stop();}catch(e){} setBtn(); }
+    else{
+      listening=true; finalBuf=""; setBtn();
+      $("hint").textContent = "Listening — just speak. It picks up new orders and changes automatically; click Stop to turn the mic off.";
+      try{rec.start();}catch(e){}
+    }
+  };
+  rec.onstart = setBtn;
+  rec.onend   = ()=>{ if(listening){ try{rec.start();}catch(e){} } else setBtn(); };   // keep the session alive
+  rec.onerror = e=>{
+    if(e.error==="no-speech"||e.error==="aborted") return;            // common during silence — ignore
+    const why = (e.error==="not-allowed"||e.error==="service-not-allowed")
+      ? "Mic blocked — click the lock/camera icon in the address bar and allow Microphone"
+      : "Mic error ("+e.error+")";
+    listening=false; setBtn(); $("hint").innerHTML = why+". Or just type — it works the same.";
+  };
+  rec.onresult = e=>{
+    if(speechSynthesis.speaking) return;        // ignore the bot's OWN voice (no feedback loop)
+    let interim="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal) finalBuf += r[0].transcript + " "; else interim += r[0].transcript;
+    }
+    $("text").value = (finalBuf+interim).trim();
+    if(finalBuf.trim() && !busy){ const t=finalBuf.trim(); finalBuf=""; send(t); }   // auto-submit a finished utterance
+  };
+}
+
+loadMenu();
+$("text").focus();
+</script>
+</body>
+</html>
